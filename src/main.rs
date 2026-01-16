@@ -146,7 +146,7 @@ async fn main() {
                 anim_timer = 0.0;
                 anim_step_index += 1;
                 if anim_step_index > MAX_STEPS {
-                    anim_step_index = 1;
+                    anim_step_index = 0;
                 }
             }
         }
