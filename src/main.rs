@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{audio, prelude::*};
 
 const MAX_STEPS: usize = 7;
 const POINT_RADIUS: f32 = 4.0;
@@ -75,9 +75,12 @@ fn closest_point_index(points: &[Vec2], mouse: Vec2, max_dist: f32) -> Option<us
 
 #[macroquad::main("Chaikin Step Animation")]
 async fn main() {
+    set_pc_assets_folder("audios");
+    let sound1 = audio::load_sound("mrhba.wav").await.unwrap();
+    let sound2 = audio::load_sound("hhh.wav").await.unwrap();
+    let button_rect = Rect::new(670.0, 10.0, 120.0, 30.0);
     let mut control_points: Vec<Vec2> = Vec::new();
     let mut dragging: Option<usize> = None;
-
     let mut anim_running = false;
     let mut anim_timer = 0.0_f32;
     let mut anim_step_index = 1_usize;
@@ -107,9 +110,13 @@ async fn main() {
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
+            if button_rect.contains(Vec2::new(mouse.x, mouse.y)) {
+                audio::play_sound_once(&sound1);
+            }
             if let Some(i) = closest_point_index(&control_points, mouse, PICK_RADIUS) {
                 dragging = Some(i);
             } else {
+                audio::play_sound_once(&sound2);
                 if !anim_running {
                     control_points.push(mouse);
                 }
@@ -145,8 +152,23 @@ async fn main() {
         }
 
         clear_background(BLACK);
-        draw_text("Left Click: add point | Drag: move point", 20.0, 30.0, 24.0, GREEN);
-        draw_text("Enter: start (7 steps loop) | C/Backspace: clear | Esc: quit", 20.0, 58.0, 22.0, GRAY);
+        draw_text(
+            "Left Click: add point | Drag: move point",
+            20.0,
+            30.0,
+            24.0,
+            GREEN,
+        );
+        draw_text(
+            "Enter: start (7 steps loop) | C/Backspace: clear | Esc: quit",
+            20.0,
+            58.0,
+            22.0,
+            GRAY,
+        );
+
+        draw_rectangle(670.0, 10.0, 120.0, 30.0, GREEN);
+        draw_text("Merhba", 690.0, 30.0, 30.0, WHITE);
 
         let status = if control_points.is_empty() {
             "Draw some control points..."
