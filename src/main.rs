@@ -1,15 +1,20 @@
 use macroquad::{audio, prelude::*};
-
+mod chai_algo;
+use chai_algo::chaikin_algo;
 #[macroquad::main("CHAIKAIN CANVAS")]
 async fn main() {
     set_pc_assets_folder("audios");
 
     let sound1 = audio::load_sound("mrhba.wav").await.unwrap();
     let sound2 = audio::load_sound("hhh.wav").await.unwrap();
+    let mut chaikin_steps: Vec<Vec<(f32, f32)>> = Vec::new();
+    let mut points: Vec<(f32, f32)> = Vec::new();
+    let mut last_update = get_time();
+    let mut current_step: usize = 0;
+    let mut is_animating = false;
+    let mut show_line = false;
 
     let button_rect = Rect::new(670.0, 10.0, 120.0, 30.0);
-    let mut points: Vec<(f32, f32)> = Vec::new();
-    let mut show_line = false;
     loop {
         clear_background(BLACK);
         draw_text(
@@ -51,14 +56,35 @@ async fn main() {
             draw_circle(x, y, 1.0, BLACK);
         }
         if is_key_pressed(KeyCode::Enter) {
-            if points.len() == 1 {
-                continue;
-            } else {
+            if points.len() >= 3 {
+                chaikin_steps.clear();
+                chaikin_steps.push(points.clone());
+
+                for i in 0..7 {
+                    let next = chaikin_algo(&chaikin_steps[i]);
+                    chaikin_steps.push(next);
+                }
+
+                current_step = 0;
+                is_animating = true;
                 show_line = true;
             }
         }
+
+        if is_animating {
+            if get_time() - last_update > 0.7 {
+                current_step += 1;
+                if current_step > 7 {
+                    current_step = 0;
+                }
+                last_update = get_time();
+            }
+        }
+
         if show_line {
-            if points.len() == 2 {
+            if is_animating && points.len() >= 3 {
+                draw_polyline(&chaikin_steps[current_step], 2.0, GREEN);
+            } else if points.len() == 2 {
                 draw_line(
                     points[0].0,
                     points[0].1,
@@ -67,8 +93,6 @@ async fn main() {
                     2.0,
                     GREEN,
                 );
-            } else if points.len() > 2 {
-                draw_polyline(&points, 2.0, GREEN);
             }
         }
 
@@ -79,7 +103,6 @@ async fn main() {
         next_frame().await
     }
 }
-
 
 fn draw_polyline(points: &Vec<(f32, f32)>, thickness: f32, color: Color) {
     for i in 0..points.len() - 1 {
